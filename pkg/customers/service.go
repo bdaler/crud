@@ -30,11 +30,15 @@ type Customer struct {
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
-	err := s.db.QueryRowContext(ctx, `
-		SELECT id, name, phone, active, created FROM customers WHERE id = $1
-	`, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
+	sqlStatement := `SELECT * FROM customers WHERE id=$1`
+	err := s.db.QueryRowContext(ctx, sqlStatement, id).Scan(
+		&item.ID,
+		&item.Name,
+		&item.Phone,
+		&item.Active,
+		&item.Created)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
 
