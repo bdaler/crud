@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/bdaler/crud/pkg/customers"
 	"log"
 	"net/http"
@@ -36,10 +35,8 @@ func (s *Server) Init() {
 }
 
 func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println(request)
 	idParam := request.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
-	fmt.Println(id)
 	if err != nil {
 		log.Println(err)
 		errorWriter(writer, http.StatusBadRequest, err)
