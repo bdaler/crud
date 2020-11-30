@@ -35,6 +35,7 @@ func (s *Server) Init() {
 }
 
 func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http.Request) {
+	log.Println(request)
 	idParam := request.URL.Query().Get("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -44,6 +45,7 @@ func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http
 	}
 
 	item, err := s.customerSvc.ByID(request.Context(), id)
+	log.Println(item)
 	if errors.Is(err, customers.ErrNotFound) {
 		errorWriter(writer, http.StatusNotFound, err)
 		return
