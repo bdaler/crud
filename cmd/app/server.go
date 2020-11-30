@@ -39,25 +39,23 @@ func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		log.Println(err)
-		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		errorWriter(writer, http.StatusBadRequest, err)
 		return
 	}
 
 	item, err := s.customerSvc.ByID(request.Context(), id)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if errors.Is(err, customers.ErrNotFound) {
+		errorWriter(writer, http.StatusNotFound, err)
 		return
 	}
 
-	data, err := json.Marshal(item)
 	if err != nil {
 		log.Println(err)
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		errorWriter(writer, http.StatusInternalServerError, err)
 		return
 	}
 
-	jsonResponse(writer, data)
+	jsonResponse(writer, item)
 }
 
 func (s *Server) handleGetAllCustomers(w http.ResponseWriter, r *http.Request) {
