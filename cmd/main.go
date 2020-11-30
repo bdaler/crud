@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"github.com/bdaler/crud/cmd/server/app"
+	"github.com/bdaler/crud/cmd/app"
 	"github.com/bdaler/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4"
 	"log"
