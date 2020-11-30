@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/bdaler/crud/pkg/customers"
 	"encoding/json"
+	"github.com/bdaler/crud/pkg/customers"
 	"log"
 	"net/http"
 	"strconv"

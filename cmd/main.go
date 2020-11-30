@@ -1,9 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/bdaler/crud/cmd/server/app"
 	"github.com/bdaler/crud/pkg/customers"
-	"database/sql"
 	_ "github.com/jackc/pgx/v4"
 	"log"
 	"net"
@@ -29,7 +29,7 @@ func execute(server, port, dsn string) (err error) {
 		return err
 	}
 	defer func() {
-		if cerr := db.Close(); cerr != nil{
+		if cerr := db.Close(); cerr != nil {
 			if err == nil {
 				err = cerr
 				return
