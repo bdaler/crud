@@ -2,8 +2,9 @@ package customers
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"time"
 )
@@ -12,11 +13,11 @@ var ErrNotFound = errors.New("customer not found")
 var ErrInternal = errors.New("internal error")
 
 type Service struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
-func NewService(db *sql.DB) *Service {
-	return &Service{db: db}
+func NewService(pool *pgxpool.Pool) *Service {
+	return &Service{pool: pool}
 }
 
 type Customer struct {
@@ -31,14 +32,14 @@ func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
 	sqlStatement := `SELECT * FROM customers WHERE id=$1`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id).Scan(
+	err := s.pool.QueryRow(ctx, sqlStatement, id).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
 		&item.Created)
 
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, ErrNotFound
 	}
 
@@ -51,7 +52,7 @@ func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 
 func (s *Service) All(ctx context.Context) (customers []*Customer, err error) {
 	sqlStatement := `SELECT * FROM customers`
-	rows, err := s.db.QueryContext(ctx, sqlStatement)
+	rows, err := s.pool.Query(ctx, sqlStatement)
 
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func (s *Service) All(ctx context.Context) (customers []*Customer, err error) {
 
 func (s *Service) AllActive(ctx context.Context) (customers []*Customer, err error) {
 	sqlStatement := `SELECT * FROM customers WHERE active = TRUE`
-	rows, err := s.db.QueryContext(ctx, sqlStatement)
+	rows, err := s.pool.Query(ctx, sqlStatement)
 
 	if err != nil {
 		return nil, err
@@ -108,14 +109,14 @@ func (s *Service) ChangeActive(ctx context.Context, id int64, active bool) (*Cus
 	item := &Customer{}
 
 	sqlStatement := `UPDATE customers SET active=$2 WHERE id=$1 RETURNING *`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id, active).Scan(
+	err := s.pool.QueryRow(ctx, sqlStatement, id, active).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
 		&item.Created)
 
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, ErrNotFound
 	}
 
@@ -131,14 +132,14 @@ func (s *Service) Delete(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
 	sqlStatement := `DELETE FROM customers WHERE id=$1 RETURNING *`
-	err := s.db.QueryRowContext(ctx, sqlStatement, id).Scan(
+	err := s.pool.QueryRow(ctx, sqlStatement, id).Scan(
 		&item.ID,
 		&item.Name,
 		&item.Phone,
 		&item.Active,
 		&item.Created)
 
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil, ErrNotFound
 	}
 
@@ -155,7 +156,7 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 
 	if customer.ID == 0 {
 		sqlStatement := `INSERT INTO customers(name, phone) VALUES ($1, $2) RETURNING *`
-		err = s.db.QueryRowContext(ctx, sqlStatement, customer.Name, customer.Phone).Scan(
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
@@ -163,7 +164,7 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 			&item.Created)
 	} else {
 		sqlStatement := `UPDATE customers SET name=$1, phone=$2 WHERE id=$3 RETURNING *`
-		err = s.db.QueryRowContext(ctx, sqlStatement, customer.Name, customer.Phone, customer.ID).Scan(
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.ID).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,

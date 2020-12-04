@@ -1,14 +1,15 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"github.com/bdaler/crud/cmd/app"
-	"github.com/bdaler/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4"
-	"log"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"go.uber.org/dig"
 	"net"
 	"net/http"
 	"os"
+	"time"
 )
 
 const (
@@ -24,28 +25,34 @@ func main() {
 }
 
 func execute(server, port, dsn string) (err error) {
-	db, err := sql.Open("pgx", dsn)
+	deps := []interface{}{
+		app.NewServer,
+		http.NewServeMux,
+		func() (*pgxpool.Pool, error) {
+			connCtx, _ := context.WithTimeout(context.Background(), time.Second*5)
+			return pgxpool.Connect(connCtx, dsn)
+		},
+		func(serverHandler *app.Server) *http.Server {
+			return &http.Server{
+				Addr:    net.JoinHostPort(server, port),
+				Handler: serverHandler,
+			}
+		},
+	}
+
+	container := dig.New()
+	for _, dep := range deps {
+		err = container.Provide(dep)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = container.Invoke(func(server *app.Server) { server.Init() })
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if cerr := db.Close(); cerr != nil {
-			if err == nil {
-				err = cerr
-				return
-			}
-			log.Println(err)
-		}
-	}()
 
-	mux := http.NewServeMux()
-	customerSvs := customers.NewService(db)
-	serverHandler := app.NewServer(mux, customerSvs)
-	serverHandler.Init()
+	return container.Invoke(func(s *http.Server) error { return s.ListenAndServe() })
 
-	srv := &http.Server{
-		Addr:    net.JoinHostPort(server, port),
-		Handler: serverHandler,
-	}
-	return srv.ListenAndServe()
 }
