@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/bdaler/crud/cmd/app"
+	"github.com/bdaler/crud/pkg/customers"
 	_ "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/dig"
@@ -28,6 +29,7 @@ func execute(server, port, dsn string) (err error) {
 	deps := []interface{}{
 		app.NewServer,
 		http.NewServeMux,
+		customers.NewService,
 		func() (*pgxpool.Pool, error) {
 			connCtx, _ := context.WithTimeout(context.Background(), time.Second*5)
 			return pgxpool.Connect(connCtx, dsn)
@@ -48,11 +50,10 @@ func execute(server, port, dsn string) (err error) {
 		}
 	}
 
-	err = container.Invoke(func(server *app.Server) { server.Init() })
+	err = container.Invoke(func(app *app.Server) { app.Init() })
 	if err != nil {
 		return err
 	}
 
 	return container.Invoke(func(s *http.Server) error { return s.ListenAndServe() })
-
 }
