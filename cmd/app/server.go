@@ -3,7 +3,9 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"github.com/bdaler/crud/cmd/app/middleawre"
 	"github.com/bdaler/crud/pkg/customers"
+	"github.com/bdaler/crud/pkg/security"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -19,11 +21,12 @@ const (
 type Server struct {
 	mux         *mux.Router
 	customerSvc *customers.Service
+	securitySvc *security.Service
 }
 
 //NewServer construct
-func NewServer(mux *mux.Router, customerSvc *customers.Service) *Server {
-	return &Server{mux: mux, customerSvc: customerSvc}
+func NewServer(mux *mux.Router, customerSvc *customers.Service, sSvc *security.Service) *Server {
+	return &Server{mux: mux, customerSvc: customerSvc, securitySvc: sSvc}
 }
 
 func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -39,6 +42,7 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/customers/{id}", s.handleDelete).Methods(DELETE)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleUnBlockByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleBlockByID).Methods(POST)
+	s.mux.Use(middleawre.Basic(s.securitySvc.Auth))
 }
 
 func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http.Request) {
