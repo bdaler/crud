@@ -248,7 +248,7 @@ func (s *Server) handleValidateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := make(map[string]interface{})
-	result["status"] = http.StatusText(http.StatusOK)
+	result["status"] = "ok"
 	result["customerId"] = id
 
 	data, err := json.Marshal(result)
