@@ -28,8 +28,13 @@ func NewService(db *pgxpool.Pool) *Service {
 }
 
 func (s *Service) Auth(login, password string) bool {
-	sqlStatement := `select login, password from managers where login=$1 and password=$2`
-	err := s.db.QueryRow(context.Background(), sqlStatement, login, password).Scan(&login, &password)
+	sqlStatement := `SELECT login, password FROM managers WHERE login=$1 and password=$2`
+	err := s.db.QueryRow(
+		context.Background(),
+		sqlStatement,
+		login,
+		password).Scan(&login, &password)
+
 	if err != nil {
 		log.Print(err)
 		return false
@@ -41,7 +46,10 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) 
 	var hash string
 	var id int64
 
-	err := s.db.QueryRow(ctx, "select id, password from customers where phone = $1", phone).Scan(&id, &hash)
+	err := s.db.QueryRow(
+		ctx,
+		"SELECT id, password FROM customers WHERE phone = $1",
+		phone).Scan(&id, &hash)
 	if err == pgx.ErrNoRows {
 		return "", ErrNoSuchUser
 	}
@@ -62,7 +70,10 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) 
 	}
 
 	token := hex.EncodeToString(buffer)
-	_, err = s.db.Exec(ctx, "INSERT INTO customers_tokens (token, customer_id) VALUES ($1, $2)", token, id)
+	_, err = s.db.Exec(
+		ctx,
+		"INSERT INTO customers_tokens (token, customer_id) VALUES ($1, $2)",
+		token, id)
 	if err != nil {
 		return "", ErrInternal
 	}
@@ -73,7 +84,10 @@ func (s *Service) TokenForCustomer(ctx context.Context, phone, password string) 
 func (s *Service) AuthenticateCustomer(ctx context.Context, token string) (int64, error) {
 	var id int64
 	var expire time.Time
-	err := s.db.QueryRow(ctx, "SELECT customer_id, expire FROM customers_tokens WHERE token=$1", token).Scan(&id, &expire)
+	err := s.db.QueryRow(
+		ctx,
+		"SELECT customer_id, expire FROM customers_tokens WHERE token=$1",
+		token).Scan(&id, &expire)
 	if err == pgx.ErrNoRows {
 		return 0, ErrNoSuchUser
 	}

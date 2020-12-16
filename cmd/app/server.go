@@ -3,10 +3,10 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	_ "github.com/bdaler/crud/cmd/app/middleawre"
 	"github.com/bdaler/crud/pkg/customers"
 	"github.com/bdaler/crud/pkg/security"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"strconv"
@@ -45,7 +45,6 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/api/customers", s.handleSave).Methods(POST)
 	s.mux.HandleFunc("/api/customers/token", s.handleGenerateToken).Methods(POST)
 	s.mux.HandleFunc("/api/customers/token/validate", s.handleValidateToken).Methods(POST)
-	//s.mux.Use(middleawre.Basic(s.securitySvc.Auth))
 }
 
 func (s *Server) handleGetCustomerById(writer http.ResponseWriter, request *http.Request) {
@@ -171,6 +170,13 @@ func (s *Server) handleSave(w http.ResponseWriter, r *http.Request) {
 		errorWriter(w, http.StatusBadRequest, err)
 		return
 	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(item.Password), bcrypt.DefaultCost)
+	if err != nil {
+		errorWriter(w, http.StatusInternalServerError, err)
+		return
+	}
+	item.Password = string(hashed)
 
 	customer, err := s.customerSvc.Save(r.Context(), item)
 	if err != nil {

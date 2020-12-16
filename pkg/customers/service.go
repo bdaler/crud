@@ -106,6 +106,7 @@ func (s *Service) AllActive(ctx context.Context) (customers []*Customer, err err
 
 	return customers, nil
 }
+
 func (s *Service) ChangeActive(ctx context.Context, id int64, active bool) (*Customer, error) {
 	item := &Customer{}
 
@@ -157,7 +158,12 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 
 	if customer.ID == 0 {
 		sqlStatement := `INSERT INTO customers(name, phone, password) VALUES ($1, $2, $3) RETURNING *`
-		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.Password).Scan(
+		err = s.pool.QueryRow(
+			ctx,
+			sqlStatement,
+			customer.Name,
+			customer.Phone,
+			customer.Password).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
@@ -165,8 +171,14 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 			&item.Active,
 			&item.Created)
 	} else {
-		sqlStatement := `UPDATE customers SET name=$1, phone=$2, password=$3 WHERE id=$3 RETURNING *`
-		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.Password, customer.ID).Scan(
+		sqlStatement := `UPDATE customers SET name=$1, phone=$2, password=$3 WHERE id=$4 RETURNING *`
+		err = s.pool.QueryRow(
+			ctx,
+			sqlStatement,
+			customer.Name,
+			customer.Phone,
+			customer.Password,
+			customer.ID).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
