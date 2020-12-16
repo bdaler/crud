@@ -21,11 +21,12 @@ func NewService(pool *pgxpool.Pool) *Service {
 }
 
 type Customer struct {
-	ID      int64     `json:"id"`
-	Name    string    `json:"name"`
-	Phone   string    `json:"phone"`
-	Active  bool      `json:"active"`
-	Created time.Time `json:"created"`
+	ID       int64     `json:"id"`
+	Name     string    `json:"name"`
+	Phone    string    `json:"phone"`
+	Password string    `json:"password"`
+	Active   bool      `json:"active"`
+	Created  time.Time `json:"created"`
 }
 
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
@@ -155,19 +156,21 @@ func (s *Service) Save(ctx context.Context, customer *Customer) (c *Customer, er
 	item := &Customer{}
 
 	if customer.ID == 0 {
-		sqlStatement := `INSERT INTO customers(name, phone) VALUES ($1, $2) RETURNING *`
-		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone).Scan(
+		sqlStatement := `INSERT INTO customers(name, phone, password) VALUES ($1, $2, $3) RETURNING *`
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.Password).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
+			&item.Password,
 			&item.Active,
 			&item.Created)
 	} else {
-		sqlStatement := `UPDATE customers SET name=$1, phone=$2 WHERE id=$3 RETURNING *`
-		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.ID).Scan(
+		sqlStatement := `UPDATE customers SET name=$1, phone=$2, password=$3 WHERE id=$3 RETURNING *`
+		err = s.pool.QueryRow(ctx, sqlStatement, customer.Name, customer.Phone, customer.Password, customer.ID).Scan(
 			&item.ID,
 			&item.Name,
 			&item.Phone,
+			&item.Password,
 			&item.Active,
 			&item.Created)
 	}
