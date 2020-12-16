@@ -225,7 +225,7 @@ func (s *Server) handleValidateToken(w http.ResponseWriter, r *http.Request) {
 		text := http.StatusText(http.StatusInternalServerError)
 		if err == security.ErrNoSuchUser {
 			status = http.StatusNotFound
-			text = http.StatusText(http.StatusNotFound)
+			text = "not found"
 		}
 		if err == security.ErrExpireToken {
 			status = http.StatusBadRequest
