@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/bdaler/crud/cmd/app"
 	"github.com/bdaler/crud/pkg/customers"
-	"github.com/bdaler/crud/pkg/security"
+	"github.com/bdaler/crud/pkg/managers"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/dig"
@@ -31,7 +31,7 @@ func execute(server, port, dsn string) (err error) {
 		app.NewServer,
 		mux.NewRouter,
 		customers.NewService,
-		security.NewService,
+		managers.NewService,
 		func() (*pgxpool.Pool, error) {
 			connCtx, _ := context.WithTimeout(context.Background(), time.Second*5)
 			return pgxpool.Connect(connCtx, dsn)
